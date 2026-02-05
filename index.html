@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Bier Pong Café Platzhirsch Lahr</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="config.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.5; }
+    h1 { font-size: 24px; margin-bottom: 5px; }
+    h2 { font-size: 18px; margin-top: 0; }
+    label { font-weight: bold; display: block; margin-top: 15px; }
+    input[type=text], select {
+      width: 100%; padding: 10px; margin-top: 5px;
+      border: 1px solid #ccc; border-radius: 5px;
+    }
+    button {
+      margin-top: 20px; padding: 12px; width: 100%;
+      background: #000; color: #fff; border: none; border-radius: 5px;
+      font-size: 16px; cursor: pointer;
+    }
+    .hint { font-size: 13px; color: #555; }
+    .msg { margin-top: 15px; font-weight: bold; }
+    .error { color: #c00; }
+    .success { color: #090; }
+  </style>
+</head>
+<body>
+
+<h1>Platzhirsch Lahr</h1>
+<h2>Bier Pong Event · 07.02.2026</h2>
+
+<p>Scan · Informieren · Abstimmen · Freigetränk sichern</p>
+
+<p>👋 Bist du dabei? Bier Pong 4.0 – kein Eintritt. Alle, die hier abstimmen, erhalten einen Gutschein für ein Freigetränk beim Bier Pong Event im Platzhirsch. Wer abstimmt und auch kommt, bekommt ein Getränk kostenlos vor Ort.</p>
+
+<form id="voteForm">
+  <label for="name">Dein Name *</label>
+  <input type="text" id="name" required placeholder="z. B. Salvo">
+  <div class="hint">Wir brauchen den Namen, um deine Teilnahme am Einlass zuzuordnen.</div>
+
+  <label for="response">Deine Rückmeldung *</label>
+  <select id="response" required>
+    <option value="">Bitte wählen…</option>
+    <option value="Ich komme sicher">Ich komme sicher</option>
+    <option value="Eher ja">Eher ja</option>
+    <option value="Eher nein">Eher nein</option>
+    <option value="Ich komme nicht">Ich komme nicht</option>
+  </select>
+
+  <label>
+    <input type="checkbox" id="consent" required>
+    Ich bin damit einverstanden, dass meine Angaben zur Eventorganisation gespeichert werden.
+  </label>
+
+  <button type="submit">Abstimmen</button>
+</form>
+
+<div class="hint" style="margin-top:10px;">* Pflichtfelder · Eine Abstimmung pro Gerät empfohlen</div>
+<div class="hint">platzhirsch-lahr.de · Datenschutz</div>
+
+<div id="message" class="msg"></div>
+
+<script>
+  // Firebase initialisieren
+  const app = firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  const form = document.getElementById('voteForm');
+  const msg = document.getElementById('message');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    msg.textContent = '';
+    msg.className = 'msg';
+
+    const name = document.getElementById('name').value.trim();
+    const response = document.getElementById('response').value;
+    const consent = document.getElementById('consent').checked;
+
+    if (!name || !response || !consent) {
+      msg.textContent = 'Bitte alle Pflichtfelder ausfüllen.';
+      msg.classList.add('error');
+      return;
+    }
+
+    try {
+      await db.collection('bierpong_votes').add({
+        name,
+        response,
+        consent,
+        createdAt: new Date()
+      });
+      msg.textContent = `Danke, ${name}! Deine Rückmeldung wurde gespeichert.`;
+      msg.classList.add('success');
+      form.reset();
+    } catch (err) {
+      console.error(err);
+      msg.textContent = 'Netzwerkfehler. Bitte später erneut versuchen.';
+      msg.classList.add('error');
+    }
+  });
+</script>
+
+</body>
+</html>
