@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin – Bier Pong Platzhirsch</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="config.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { font-size: 22px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #ccc; padding: 8px; font-size: 14px; }
+    th { background: #f0f0f0; }
+    input[type=password] { padding: 8px; width: 100%; max-width: 250px; }
+    button { padding: 8px 12px; margin-top: 10px; }
+    .hidden { display: none; }
+    .error { color: #c00; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+<h1>Admin – Bier Pong Event</h1>
+
+<div id="login">
+  <p>Passwort eingeben:</p>
+  <input type="password" id="adminPass" placeholder="Admin-Passwort">
+  <button id="loginBtn">Login</button>
+  <div id="loginMsg" class="error"></div>
+</div>
+
+<div id="adminArea" class="hidden">
+  <p>Angemeldet als Admin. <button id="reloadBtn">Aktualisieren</button></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Zeit</th>
+        <th>Name</th>
+        <th>Rückmeldung</th>
+      </tr>
+    </thead>
+    <tbody id="votesBody"></tbody>
+  </table>
+</div>
+
+<script>
+  const ADMIN_PASSWORD = 'Platzhirsch2026!';
+
+  const app = firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  const loginDiv = document.getElementById('login');
+  const adminArea = document.getElementById('adminArea');
+  const loginBtn = document.getElementById('loginBtn');
+  const loginMsg = document.getElementById('loginMsg');
+  const votesBody = document.getElementById('votesBody');
+  const reloadBtn = document.getElementById('reloadBtn');
+
+  loginBtn.addEventListener('click', () => {
+    const pw = document.getElementById('adminPass').value;
+    if (pw === ADMIN_PASSWORD) {
+      loginDiv.classList.add('hidden');
+      adminArea.classList.remove('hidden');
+      loadVotes();
+    } else {
+      loginMsg.textContent = 'Falsches Passwort.';
+    }
+  });
+
+  reloadBtn.addEventListener('click', loadVotes);
+
+  async function loadVotes() {
+    votesBody.innerHTML = '';
+    const snap = await db.collection('bierpong_votes').orderBy('createdAt', 'desc').get();
+    snap.forEach(doc => {
+      const d = doc.data();
+      const tr = document.createElement('tr');
+      const date = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate() : new Date();
+      tr.innerHTML = `
+        <td>${date.toLocaleString('de-DE')}</td>
+        <td>${d.name}</td>
+        <td>${d.response}</td>
+      `;
+      votesBody.appendChild(tr);
+    });
+  }
+</script>
+
+</body>
+</html>
